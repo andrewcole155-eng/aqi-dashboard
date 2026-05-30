@@ -1512,8 +1512,7 @@ with tab1:
             key=lambda x: (0 if 'DEGRADED' in x[1]['Status'] else (1 if 'STABLE' in x[1]['Status'] else 2), x[1]['Decay'])
         )
 
-        html_output = '<div style="font-family: Arial, sans-serif; padding: 5px; color: #fff;">'
-        
+        html_output = ""
         for ticker, profile in sorted_health:
             status = profile['Status']
             
@@ -1523,21 +1522,16 @@ with tab1:
             if 'STABLE' in status: statusColor = '#ffb000' # Yellow/Orange
             if 'DEGRADED' in status: statusColor = '#ff4b4b' # Red
             
-            # Build the intelligence cards
-            html_output += f"""
-            <div style="margin-bottom: 15px; padding: 15px; border-left: 5px solid {statusColor}; background-color: #1e1e1e; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                <strong style="font-size: 1.2em; color: #fff;">{ticker}</strong> 
-                <span style="background-color: {statusColor}; color: #111; padding: 3px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; margin-left: 10px;">{status}</span>
-                <p style="margin: 8px 0 0 0; font-size: 0.95em; line-height: 1.5; color: #ccc;">
-                    The model displays a <strong>Base Information Ratio of {profile['Base IR']}</strong>, shifting to a <strong>Live IR of {profile['Live IR']}</strong> in recent sessions. 
-                    An asset decay factor of <strong style="color: {statusColor};">{profile['Decay']}</strong> is currently applied, with the system monitoring a Maximum Drawdown (MDD) window of <strong>{profile['MDD']} days</strong>.
-                </p>
-            </div>
-            """
+            # Flat string concatenation prevents Streamlit from rendering as a code block
+            html_output += f'<div style="margin-bottom: 12px; padding: 15px; border-left: 5px solid {statusColor}; background-color: #1e1e1e; border-radius: 6px;">'
+            html_output += f'<strong style="font-size: 1.2em; color: #fff;">{ticker}</strong>'
+            html_output += f'<span style="background-color: {statusColor}; color: #111; padding: 3px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold; margin-left: 10px;">{status}</span>'
+            html_output += f'<p style="margin: 8px 0 0 0; font-size: 0.95em; line-height: 1.5; color: #ccc;">'
+            html_output += f'The model displays a <strong>Base Information Ratio of {profile["Base IR"]}</strong>, shifting to a <strong>Live IR of {profile["Live IR"]}</strong> in recent sessions. '
+            html_output += f'An asset decay factor of <strong style="color: {statusColor};">{profile["Decay"]}</strong> is currently applied, with the system monitoring a Maximum Drawdown (MDD) window of <strong>{profile["MDD"]} days</strong>.'
+            html_output += f'</p></div>'
             
-        html_output += '</div>'
-        
-        # Render the custom HTML block in Streamlit
+        # Render the custom HTML block safely
         st.markdown(html_output, unsafe_allow_html=True)
         
     else:
