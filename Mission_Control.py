@@ -1278,9 +1278,7 @@ if account:
     last_run_str, last_run_dt, parsed_signals, watchlist_data, conviction_data, ghost_regime, model_health = parse_latest_run_logic(logs)
 
     # --- NEW: WEEKEND PERSISTENCE MEMORY ---
-    # Because 24/7 telemetry floods the log buffer, the actual trade signals get pushed out when the market is closed.
-    # This ensures the dashboard "remembers" the Friday closing conviction levels all weekend.
-    if conviction_data:
+    if conviction_data and len(conviction_data) > 0:
         st.session_state['saved_conviction'] = conviction_data
         st.session_state['saved_signals'] = parsed_signals
         st.session_state['saved_watchlist'] = watchlist_data
@@ -1288,6 +1286,19 @@ if account:
         conviction_data = st.session_state.get('saved_conviction', {})
         parsed_signals = st.session_state.get('saved_signals', {})
         watchlist_data = st.session_state.get('saved_watchlist', [])
+
+    # Cache Model Health separately since it updates via telemetry, not just trade signals
+    if model_health and len(model_health) > 0:
+        st.session_state['saved_model_health'] = model_health
+    else:
+        model_health = st.session_state.get('saved_model_health', {})
+        
+    # Cache Ghost Regime separately
+    if ghost_regime.get("Long_MA") != "0.0%":
+        st.session_state['saved_ghost_regime'] = ghost_regime
+    else:
+        # Fallback to default if memory is empty
+        ghost_regime = st.session_state.get('saved_ghost_regime', {"Long": True, "Short": True, "Long_MA": "0.0%", "Short_MA": "0.0%"})
     # -----------------------------------------
 
     # Calculate "Time Since Last Run"
