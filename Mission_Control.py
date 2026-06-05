@@ -558,14 +558,31 @@ def calculate_advanced_metrics(hist_df):
     # --- 4. DASHBOARD-SPECIFIC METRICS ---
     df_with_dd = calculate_drawdown(df)
     max_underwater_days = int(df_with_dd['underwater_days'].max()) if 'underwater_days' in df_with_dd.columns else 0
-    ulcer_index = (df_with_dd['drawdown'] ** 2).mean() ** 0.5 if 'drawdown' in df_with_dd.columns else 0
+    
+    # FIX: Scale the Ulcer Index correctly by multiplying the raw drawdown by 100 before squaring
+    ulcer_index = ((df_with_dd['drawdown'] * 100) ** 2).mean() ** 0.5 if 'drawdown' in df_with_dd.columns else 0.0
 
     if 'benchmark_return' in df.columns:
         active_return = returns - df['benchmark_return']
         tracking_error = active_return.std()
-        information_ratio = (active_return.mean() / tracking_error) * (252 ** 0.5) if tracking_error > 0 else 0
+        
+        # FIX: Ensure robust scaling for the Information Ratio
+        if tracking_error > 1e-9:
+            # Annualize the mean active return and tracking error properly
+            annualized_active_return = active_return.mean() * 252
+            annualized_tracking_error = tracking_error * (252 ** 0.5)
+            information_ratio = annualized_active_return / annualized_tracking_error
+        else:
+            information_ratio = 0.0
     else:
-        information_ratio = 0.0
+        # If no benchmark is provided, fallback to a standard Sharpe calculation as a proxy for IR
+        tracking_error = returns.std()
+        if tracking_error > 1e-9:
+             annualized_return = returns.mean() * 252
+             annualized_tracking_error = tracking_error * (252 ** 0.5)
+             information_ratio = annualized_return / annualized_tracking_error
+        else:
+             information_ratio = 0.0
 
     wins = len(returns[returns > 0])
     total_active = len(returns[returns != 0])
