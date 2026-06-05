@@ -186,22 +186,43 @@ def parse_latest_run_logic(logs):
     action_map = {"0": "HOLD", "1": "LONG", "2": "SHORT", "3": "CLOSE"}
     
     for line in reversed(logs):
-        # --- NEW: Extract Model Health Analytics ---
-        if "Profile:" in line and "Base IR:" in line:
+        # --- ROBUST LOG SCRAPER: Support both standard clean log lines and legacy profiles ---
+        if "Baseline Loaded" in line or "IR Benchmark" in line:
+            try:
+                # Extracts from format: "[KO] Weekend Baseline Loaded. IR Benchmark: 0.016"
+                ticker_match = re.search(r"\[([A-Z]+)\]", line)
+                ir_match = re.search(r"IR Benchmark:\s*([\d\.-]+)", line)
+                if ticker_match and ir_match:
+                    t_name = ticker_match.group(1)
+                    if t_name not in model_health:
+                        model_health[t_name] = {
+                            "Status": "STABLE",
+                            "Base IR": float(ir_match.group(1)),
+                            "Live IR": float(ir_match.group(1)),  # Default to base during initialization
+                            "Decay": 1.0,
+                            "MDD": 0,
+                            "Base MDD": 0,
+                            "Base WR": 50.0
+                        }
+            except Exception:
+                pass
+                
+        # Fallback to process legacy structured profiles if they appear in the log pipeline
+        elif "Profile:" in line and "Base IR:" in line:
             try:
                 parts = line.split("|")
-                ticker_match = re.search(r"🧠\s+([A-Z]+)\s+Profile:\s+(.*?)\s*$", parts[0])
+                ticker_match = re.search(r"(?:🧠)?\s*([A-Z]+)\s+Profile:\s+(.*?)\s*$", parts[0])
                 if ticker_match:
                     t_name = ticker_match.group(1)
                     if t_name not in model_health:
                         model_health[t_name] = {
                             "Status": ticker_match.group(2).strip(),
-                            "Base IR": float(parts[1].split(":")[1].strip()),
-                            "Live IR": float(parts[2].split(":")[1].strip()),
-                            "Decay": float(parts[3].split(":")[1].strip()),
-                            "MDD": int(re.search(r"(\d+)d", parts[4]).group(1)),
+                            "Base IR": float(parts[1].split(":")[1].strip()) if "Base IR" in parts[1] else 0.0,
+                            "Live IR": float(parts[2].split(":")[1].strip()) if "Live IR" in parts[2] else 0.0,
+                            "Decay": float(parts[3].split(":")[1].strip()) if "Decay" in parts[3] else 1.0,
+                            "MDD": int(re.search(r"(\d+)d", parts[4]).group(1)) if len(parts) > 4 else 0,
                             "Base MDD": int(re.search(r"(\d+)d", parts[5]).group(1)) if len(parts) > 5 else 0,
-                            "Base WR": float(re.search(r"([\d\.]+)%", parts[6]).group(1)) if len(parts) > 6 else 0.0
+                            "Base WR": float(re.search(r"([\d\.]+)%", parts[6]).group(1)) if len(parts) > 6 else 50.0
                         }
             except Exception:
                 pass
