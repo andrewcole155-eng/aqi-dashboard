@@ -1516,8 +1516,8 @@ with tab1:
     # Calculate continuous multiplier logic (Matching the backend script)
     def calculate_display_multiplier(ema):
         if ema >= 0.015: return 1.15
-        elif ema >= 0.0: return 1.0
-        else: return max(0.0, 1.0 + (ema / 0.025))
+        elif ema >= -0.01: return 1.0
+        else: return max(0.10, 1.0 + (ema / 0.05))
 
     # Safely extract history
     ghost_history = bot_state.get('ghost_history', {'long': [], 'short': []})
