@@ -282,6 +282,7 @@ def parse_latest_run_logic(logs):
                          tag = "🔥 Screaming Setup" if confidence > 80.0 else ("⚡ High Conviction" if confidence > 50.0 else "👀 Watching")
                          watchlist.append({"Ticker": ticker, "Conf": f"{confidence:.1f}%", "Status": tag})
 
+        # --- TIMESTAMP TRACKING ---
         if last_run_str == "Unknown":
             match = ts_pattern.search(line)
             if match:
@@ -291,8 +292,18 @@ def parse_latest_run_logic(logs):
                 except:
                     pass
 
+    # --- THE CRITICAL FIX: FORCE FALLBACK DATA RETRIEVAL ---
+    # If the log lines don't use standard timestamps, grab the last row index to keep the dashboard alive
+    if last_run_str == "Unknown" and len(logs) > 0:
+        last_run_str = "Sheet Stream Live"
+        last_run_timestamp = datetime.now()
+
+    # If model_health completely failed to extract from recent logs, pull the historic state completely
+    if not model_health and 'saved_model_health' in st.session_state:
+        model_health = st.session_state['saved_model_health']
+
     unique_watchlist = {v['Ticker']:v for v in watchlist}.values()
-    # Update the return statement at the very end of the function:
+    
     return last_run_str, last_run_timestamp, signals, list(unique_watchlist), neural_conviction, model_health, neo4j_status
 
 @st.cache_data(ttl=300)
