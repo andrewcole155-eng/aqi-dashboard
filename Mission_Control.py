@@ -3065,14 +3065,14 @@ with tab5:
 with tab6:
     # --- QUANTUM ALPHA MODEL LIFECYCLE MONITOR ---
     st.subheader("🧠 Quantum Alpha Model Lifecycle Monitor")
-        st.markdown("Real-time alignment tracking between weekend optimization blueprints and live out-of-sample market execution.")
+    st.markdown("Real-time alignment tracking between weekend optimization blueprints and live out-of-sample market execution.")
         
-        # --- ADD THESE TWO DEBUG LINES HERE ---
-        st.warning("🕵️‍♂️ DEBUGGING RAW DATA:")
-        st.write(model_health) 
-        # --------------------------------------
+    # --- ADD THESE TWO DEBUG LINES HERE ---
+    st.warning("🕵️‍♂️ DEBUGGING RAW DATA:")
+    st.write(model_health) 
+    # --------------------------------------
 
-        if model_health:
+    if model_health:
        # Safety Check: If it came through as a string, try to parse it as JSON
         if isinstance(model_health, str):
             try:
